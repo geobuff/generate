@@ -1,0 +1,2 @@
+runtime: go118
+service: generate
