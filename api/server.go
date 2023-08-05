@@ -8,6 +8,8 @@ import (
 
 	"github.com/didip/tollbooth"
 	"github.com/geobuff/generate/utils"
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
@@ -33,10 +35,21 @@ func NewServer(listenAddr string, rateLimiterMax float64, allowedOrigins []strin
 }
 
 func (s *Server) Start() error {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		EnableTracing:    true,
+		TracesSampleRate: 1.0,
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	sentryHandler := sentryhttp.New(sentryhttp.Options{})
 	router := mux.NewRouter()
 	router.HandleFunc("/", s.ping)
-	router.HandleFunc("/api/trivia", s.createTrivia).Methods("POST")
-	router.HandleFunc("/api/trivia/{date}", s.regenerateTrivia).Methods("PUT")
+	router.HandleFunc("/api/trivia", sentryHandler.HandleFunc(s.createTrivia)).Methods("POST")
+	router.HandleFunc("/api/trivia/{date}", sentryHandler.HandleFunc(s.regenerateTrivia)).Methods("PUT")
 
 	limiter := tollbooth.LimitHandler(tollbooth.NewLimiter(s.rateLimiterMax, nil), s.handler(router))
 	return http.ListenAndServe(s.listenAddr, limiter)
