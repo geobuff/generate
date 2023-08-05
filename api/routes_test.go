@@ -16,7 +16,7 @@ func newTestServer(service utils.IService) *Server {
 
 func TestPing(t *testing.T) {
 	service := new(utils.MockService)
-	server := tewTestServer(service)
+	server := newTestServer(service)
 
 	request, err := http.NewRequest("GET", "", nil)
 	if err != nil {
