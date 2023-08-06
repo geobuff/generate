@@ -2,7 +2,6 @@ package utils
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -48,15 +47,16 @@ func (s *Service) RegenerateTrivia(dateString string) error {
 }
 
 func (s *Service) createTriviaForDate(date time.Time) error {
-	var id int
-	if err := s.store.GetConnection().QueryRow("SELECT id FROM trivia WHERE date = $1", date).Scan(&id); err != sql.ErrNoRows {
-		return errors.New("trivia for current date already created")
+	doesNotExist, err := s.store.TriviaDoesNotExistForDate(date)
+	if !doesNotExist {
+		return fmt.Errorf("trivia for date %s already exists", date)
 	}
 
 	_, month, day := date.Date()
 	weekday := date.Weekday().String()
-	statement := "INSERT INTO trivia (name, date, maxscore) VALUES ($1, $2, $3) RETURNING id;"
-	if err := s.store.GetConnection().QueryRow(statement, fmt.Sprintf("%s, %s %d", weekday, month, day), date, 0).Scan(&id); err != nil {
+	name := fmt.Sprintf("%s, %s %d", weekday, month, day)
+	id, err := s.store.CreateTrivia(name, date)
+	if err != nil {
 		return err
 	}
 

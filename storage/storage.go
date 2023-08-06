@@ -1,13 +1,12 @@
 package storage
 
 import (
-	"database/sql"
+	"time"
 
 	"github.com/geobuff/generate/types"
 )
 
 type IStore interface {
-	GetConnection() *sql.DB
 	ClearTriviaPlayTriviaId(triviaId int) error
 	DeleteTriviaAnswers(triviaQuestionId int) error
 	GetTrivia(date string) (*types.TriviaDto, error)
@@ -22,4 +21,6 @@ type IStore interface {
 	GetManualTriviaQuestions(typeID int, lastUsedMax string, allowedCategories []int) ([]types.ManualTriviaQuestion, error)
 	GetManualTriviaAnswers(questionID int) ([]types.ManualTriviaAnswer, error)
 	UpdateManualTriviaQuestionLastUsed(questionID int) error
+	TriviaDoesNotExistForDate(date time.Time) (bool, error)
+	CreateTrivia(name string, date time.Time) (int, error)
 }
