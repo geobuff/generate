@@ -159,6 +159,15 @@ func (s *Service) generateQuestions(triviaId, max int) (int, error) {
 	return count, nil
 }
 
+func getCountry(countries []types.MappingEntryDto, country string) (int, error) {
+	for i, val := range countries {
+		if val.SVGName == country {
+			return i, nil
+		}
+	}
+	return 0, fmt.Errorf("unable to find country %s in country mappings", country)
+}
+
 func (s *Service) whatCountry(triviaId int, countries []types.MappingEntryDto) error {
 	max := len(types.TopLandmass)
 	index := rand.Intn(max)
@@ -188,12 +197,11 @@ func (s *Service) whatCountry(triviaId int, countries []types.MappingEntryDto) e
 		return err
 	}
 
-	for i, val := range countries {
-		if val.SVGName == country {
-			index = i
-			break
-		}
+	index, err = getCountry(countries, country)
+	if err != nil {
+		return err
 	}
+
 	countries = append(countries[:index], countries[index+1:]...)
 	max = len(countries)
 
