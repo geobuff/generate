@@ -2,7 +2,6 @@ package utils
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -32,6 +31,11 @@ func (s *Service) CreateTrivia() error {
 }
 
 func (s *Service) RegenerateTrivia(dateString string) error {
+	_, err := time.Parse("2006-02-01", dateString)
+	if err != nil {
+		return err
+	}
+
 	trivia, err := s.store.GetTrivia(dateString)
 	if err != nil && err != sql.ErrNoRows {
 		return err
@@ -48,15 +52,16 @@ func (s *Service) RegenerateTrivia(dateString string) error {
 }
 
 func (s *Service) createTriviaForDate(date time.Time) error {
-	var id int
-	if err := s.store.GetConnection().QueryRow("SELECT id FROM trivia WHERE date = $1", date).Scan(&id); err != sql.ErrNoRows {
-		return errors.New("trivia for current date already created")
+	doesNotExist, err := s.store.TriviaDoesNotExistForDate(date)
+	if !doesNotExist {
+		return fmt.Errorf("trivia for date %s already exists", date)
 	}
 
 	_, month, day := date.Date()
 	weekday := date.Weekday().String()
-	statement := "INSERT INTO trivia (name, date, maxscore) VALUES ($1, $2, $3) RETURNING id;"
-	if err := s.store.GetConnection().QueryRow(statement, fmt.Sprintf("%s, %s %d", weekday, month, day), date, 0).Scan(&id); err != nil {
+	name := fmt.Sprintf("%s, %s %d", weekday, month, day)
+	id, err := s.store.CreateTrivia(name, date)
+	if err != nil {
 		return err
 	}
 
@@ -124,6 +129,10 @@ func (s *Service) generateQuestions(triviaId, max int) (int, error) {
 		}
 
 		remainder := max - count
+		if len(categories) < remainder {
+			return count, fmt.Errorf("need to generate %d more questions but only %d available categories", remainder, len(categories))
+		}
+
 		var allowedCategories []types.TriviaQuestionCategory
 		for i := 0; i < remainder; i++ {
 			index := rand.Intn(len(categories))
@@ -159,6 +168,15 @@ func (s *Service) generateQuestions(triviaId, max int) (int, error) {
 	return count, nil
 }
 
+func getCountry(countries []types.MappingEntryDto, country string) (int, error) {
+	for i, val := range countries {
+		if val.SVGName == country {
+			return i, nil
+		}
+	}
+	return 0, fmt.Errorf("unable to find country %s in country mappings", country)
+}
+
 func (s *Service) whatCountry(triviaId int, countries []types.MappingEntryDto) error {
 	max := len(types.TopLandmass)
 	index := rand.Intn(max)
@@ -188,12 +206,11 @@ func (s *Service) whatCountry(triviaId int, countries []types.MappingEntryDto) e
 		return err
 	}
 
-	for i, val := range countries {
-		if val.SVGName == country {
-			index = i
-			break
-		}
+	index, err = getCountry(countries, country)
+	if err != nil {
+		return err
 	}
+
 	countries = append(countries[:index], countries[index+1:]...)
 	max = len(countries)
 

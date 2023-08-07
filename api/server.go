@@ -8,6 +8,8 @@ import (
 
 	"github.com/didip/tollbooth"
 	"github.com/geobuff/generate/utils"
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
@@ -33,10 +35,21 @@ func NewServer(listenAddr string, rateLimiterMax float64, allowedOrigins []strin
 }
 
 func (s *Server) Start() error {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		EnableTracing:    true,
+		TracesSampleRate: 1.0,
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	sentryHandler := sentryhttp.New(sentryhttp.Options{})
 	router := mux.NewRouter()
 	router.HandleFunc("/", s.ping)
-	router.HandleFunc("/api/trivia", s.createTrivia).Methods("POST")
-	router.HandleFunc("/api/trivia/{date}", s.regenerateTrivia).Methods("PUT")
+	router.HandleFunc("/api/trivia", sentryHandler.HandleFunc(s.createTrivia)).Methods("POST")
+	router.HandleFunc("/api/trivia/{date}", sentryHandler.HandleFunc(s.regenerateTrivia)).Methods("PUT")
 
 	limiter := tollbooth.LimitHandler(tollbooth.NewLimiter(s.rateLimiterMax, nil), s.handler(router))
 	return http.ListenAndServe(s.listenAddr, limiter)
@@ -50,26 +63,4 @@ func (s *Server) handler(router http.Handler) http.Handler {
 	})
 
 	return corsOptions.Handler(router)
-}
-
-func (s *Server) ping(writer http.ResponseWriter, request *http.Request) {
-	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte("PING SUCCESSFUL"))
-}
-
-func (s *Server) createTrivia(writer http.ResponseWriter, request *http.Request) {
-	err := s.service.CreateTrivia()
-	if err != nil {
-		http.Error(writer, fmt.Sprintf("%v\n", err), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) regenerateTrivia(writer http.ResponseWriter, request *http.Request) {
-	date := mux.Vars(request)["date"]
-	err := s.service.RegenerateTrivia(date)
-	if err != nil {
-		http.Error(writer, fmt.Sprintf("%v\n", err), http.StatusInternalServerError)
-		return
-	}
 }

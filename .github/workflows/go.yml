@@ -44,21 +44,25 @@ jobs:
           echo ENVIRONMENT=dev >> .env
           echo CONNECTION_STRING=$DEV_CONNECTION_STRING >> .env
           echo CORS_ORIGINS=$DEV_CORS_ORIGINS >> .env
+          echo SENTRY_DSN=$DEV_SENTRY_DSN  >> .env
         env:
           DEV_CONNECTION_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
           DEV_CORS_ORIGINS: ${{ vars.DEV_CORS_ORIGINS }}
+          DEV_SENTRY_DSN: ${{ secrets.DEV_SENTRY_DSN }}
       - name: Add PROD config
         if: github.ref == 'refs/heads/main'
         run: |
           echo ENVIRONMENT=prod >> .env
           echo CONNECTION_STRING=$PROD_CONNECTION_STRING >> .env
           echo CORS_ORIGINS=$PROD_CORS_ORIGINS >> .env
+          echo SENTRY_DSN=$PROD_SENTRY_DSN  >> .env
           echo "vpc_access_connector:" >> app.yaml
           echo "  name: projects/$PROD_GOOGLE_PROJECT_ID/locations/$PROD_GCLOUD_REGION/connectors/$PROD_GCLOUD_CONNECTOR_NAME" >> app.yaml
           echo "  egress_setting: all-traffic" >> app.yaml
         env:
           PROD_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}
           PROD_CORS_ORIGINS: ${{ vars.PROD_CORS_ORIGINS }}
+          PROD_SENTRY_DSN: ${{ secrets.PROD_SENTRY_DSN }}
           PROD_GOOGLE_PROJECT_ID: ${{ vars.PROD_GOOGLE_PROJECT_ID }}
           PROD_GCLOUD_REGION: ${{ vars.PROD_GCLOUD_REGION }}
           PROD_GCLOUD_CONNECTOR_NAME: ${{ vars.PROD_GCLOUD_CONNECTOR_NAME }}
