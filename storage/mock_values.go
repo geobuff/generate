@@ -457,3 +457,42 @@ var capitals = []types.MappingEntryDto{
 	{ID: 1, GroupID: 1, Name: "zm", Code: "lusaka", FlagUrl: "", SVGName: "Lusaka", AlternativeNames: &pq.StringArray{}, Prefixes: &pq.StringArray{}, Grouping: ""},
 	{ID: 1, GroupID: 1, Name: "zw", Code: "harare", FlagUrl: "", SVGName: "Harare", AlternativeNames: &pq.StringArray{}, Prefixes: &pq.StringArray{}, Grouping: ""},
 }
+
+var questionCategories = []types.TriviaQuestionCategory{
+	{
+		ID:        1,
+		Name:      "Testing",
+		IsActive:  true,
+		ImageOnly: false,
+	},
+	{
+		ID:        2,
+		Name:      "Currency",
+		IsActive:  true,
+		ImageOnly: false,
+	},
+	{
+		ID:        3,
+		Name:      "Mountains",
+		IsActive:  true,
+		ImageOnly: false,
+	},
+	{
+		ID:        4,
+		Name:      "Rivers",
+		IsActive:  true,
+		ImageOnly: false,
+	},
+	{
+		ID:        5,
+		Name:      "Landmass",
+		IsActive:  true,
+		ImageOnly: false,
+	},
+	{
+		ID:        6,
+		Name:      "Testing",
+		IsActive:  true,
+		ImageOnly: false,
+	},
+}

@@ -31,6 +31,11 @@ func (s *Service) CreateTrivia() error {
 }
 
 func (s *Service) RegenerateTrivia(dateString string) error {
+	_, err := time.Parse("2006-02-01", dateString)
+	if err != nil {
+		return err
+	}
+
 	trivia, err := s.store.GetTrivia(dateString)
 	if err != nil && err != sql.ErrNoRows {
 		return err
@@ -124,6 +129,10 @@ func (s *Service) generateQuestions(triviaId, max int) (int, error) {
 		}
 
 		remainder := max - count
+		if len(categories) < remainder {
+			return count, fmt.Errorf("need to generate %d more questions but only %d available categories", remainder, len(categories))
+		}
+
 		var allowedCategories []types.TriviaQuestionCategory
 		for i := 0; i < remainder; i++ {
 			index := rand.Intn(len(categories))

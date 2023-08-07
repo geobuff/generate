@@ -53,7 +53,7 @@ func (s *MockStore) GetTodaysManualTriviaQuestions() ([]types.ManualTriviaQuesti
 }
 
 func (s *MockStore) GetTriviaQuestionCategories(onlyActive bool) ([]types.TriviaQuestionCategory, error) {
-	return []types.TriviaQuestionCategory{}, nil
+	return questionCategories, nil
 }
 
 func (s *MockStore) CreateTriviaQuestion(question types.TriviaQuestion) (int, error) {
