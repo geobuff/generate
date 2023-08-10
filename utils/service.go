@@ -11,8 +11,8 @@ import (
 )
 
 type IService interface {
-	CreateTrivia() error
-	RegenerateTrivia(dateString string) error
+	CreateTrivia() (*types.TriviaDto, error)
+	RegenerateTrivia(dateString string) (*types.TriviaDto, error)
 }
 
 type Service struct {
@@ -25,36 +25,47 @@ func NewService(store storage.IStore) *Service {
 	}
 }
 
-func (s *Service) CreateTrivia() error {
+func (s *Service) CreateTrivia() (*types.TriviaDto, error) {
 	date := time.Now().AddDate(0, 0, 1)
-	return s.createTriviaForDate(date)
-}
-
-func (s *Service) RegenerateTrivia(dateString string) error {
-	_, err := time.Parse("2006-02-01", dateString)
+	id, err := s.createTriviaForDate(date)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	trivia, err := s.store.GetTrivia(dateString)
+	return s.store.GetTrivia(id)
+
+}
+
+func (s *Service) RegenerateTrivia(dateString string) (*types.TriviaDto, error) {
+	_, err := time.Parse("2006-02-01", dateString)
+	if err != nil {
+		return nil, err
+	}
+
+	trivia, err := s.store.GetTriviaByDate(dateString)
 	if err != nil && err != sql.ErrNoRows {
-		return err
+		return nil, err
 	}
 
 	if err != sql.ErrNoRows {
 		if err = s.store.DeleteTrivia(trivia); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	date, err := time.Parse("2006-01-02", dateString)
-	return s.createTriviaForDate(date)
+	id, err := s.createTriviaForDate(date)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.store.GetTrivia(id)
 }
 
-func (s *Service) createTriviaForDate(date time.Time) error {
+func (s *Service) createTriviaForDate(date time.Time) (int, error) {
 	doesNotExist, err := s.store.TriviaDoesNotExistForDate(date)
 	if !doesNotExist {
-		return fmt.Errorf("trivia for date %s already exists", date)
+		return 0, fmt.Errorf("trivia for date %s already exists", date)
 	}
 
 	_, month, day := date.Date()
@@ -62,15 +73,15 @@ func (s *Service) createTriviaForDate(date time.Time) error {
 	name := fmt.Sprintf("%s, %s %d", weekday, month, day)
 	id, err := s.store.CreateTrivia(name, date)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	count, err := s.generateQuestions(id, 10)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return s.store.SetTriviaMaxScore(id, count)
+	return id, s.store.SetTriviaMaxScore(id, count)
 }
 
 func (s *Service) generateQuestions(triviaId, max int) (int, error) {

@@ -24,7 +24,11 @@ func (s *MockStore) DeleteTrivia(trivia *types.TriviaDto) error {
 	return nil
 }
 
-func (s *MockStore) GetTrivia(date string) (*types.TriviaDto, error) {
+func (s *MockStore) GetTrivia(id int) (*types.TriviaDto, error) {
+	return &types.TriviaDto{}, nil
+}
+
+func (s *MockStore) GetTriviaByDate(date string) (*types.TriviaDto, error) {
 	return &types.TriviaDto{}, nil
 }
 

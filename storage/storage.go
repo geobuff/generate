@@ -9,7 +9,8 @@ import (
 type IStore interface {
 	ClearTriviaPlayTriviaId(triviaId int) error
 	DeleteTriviaAnswers(triviaQuestionId int) error
-	GetTrivia(date string) (*types.TriviaDto, error)
+	GetTrivia(id int) (*types.TriviaDto, error)
+	GetTriviaByDate(date string) (*types.TriviaDto, error)
 	DeleteTrivia(trivia *types.TriviaDto) error
 	SetTriviaMaxScore(triviaID, maxScore int) error
 	GetMappingEntries(key string) ([]types.MappingEntryDto, error)

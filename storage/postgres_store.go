@@ -73,14 +73,14 @@ func (s *PostgresStore) deleteTriviaQuestion(questionId int) error {
 	return s.connection.QueryRow(statement, questionId).Scan(&id)
 }
 
-func (s *PostgresStore) GetTrivia(date string) (*types.TriviaDto, error) {
+func (s *PostgresStore) GetTrivia(id int) (*types.TriviaDto, error) {
 	var result types.TriviaDto
-	err := s.connection.QueryRow("SELECT id, name, maxscore from trivia WHERE date = $1;", date).Scan(&result.ID, &result.Name, &result.MaxScore)
+	err := s.connection.QueryRow("SELECT id, name, maxscore from trivia WHERE id = $1;", id).Scan(&result.ID, &result.Name, &result.MaxScore)
 	if err != nil {
 		return nil, err
 	}
 
-	questions, err := s.getTriviaQuestions(result.ID)
+	questions, err := s.getTriviaQuestions(result.ID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,23 @@ func (s *PostgresStore) GetTrivia(date string) (*types.TriviaDto, error) {
 	return &result, nil
 }
 
-func (s *PostgresStore) getTriviaQuestions(triviaId int) ([]types.QuestionDto, error) {
+func (s *PostgresStore) GetTriviaByDate(date string) (*types.TriviaDto, error) {
+	var result types.TriviaDto
+	err := s.connection.QueryRow("SELECT id, name, maxscore from trivia WHERE date = $1;", date).Scan(&result.ID, &result.Name, &result.MaxScore)
+	if err != nil {
+		return nil, err
+	}
+
+	questions, err := s.getTriviaQuestions(result.ID, true)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Questions = questions
+	return &result, nil
+}
+
+func (s *PostgresStore) getTriviaQuestions(triviaId int, includeMap bool) ([]types.QuestionDto, error) {
 	rows, err := s.connection.Query("SELECT q.id, t.name, q.question, q.map, q.highlighted, q.flagCode, f.url, q.imageUrl, q.imageAttributeName, q.imageAttributeUrl, q.imageWidth, q.imageHeight, q.imageAlt, q.explainer FROM triviaQuestions q JOIN triviaQuestionType t ON t.id = q.typeId LEFT JOIN flagEntries f ON f.code = q.flagCode WHERE q.triviaId = $1;", triviaId)
 	if err != nil {
 		return nil, err
@@ -103,7 +119,7 @@ func (s *PostgresStore) getTriviaQuestions(triviaId int) ([]types.QuestionDto, e
 			return nil, err
 		}
 
-		if question.MapName != "" {
+		if includeMap && question.MapName != "" {
 			svgMap, err := s.GetMap(question.MapName)
 			if err != nil {
 				return nil, err

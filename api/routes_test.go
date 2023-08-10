@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/geobuff/generate/types"
 	"github.com/geobuff/generate/utils"
 	"github.com/gorilla/mux"
 )
@@ -54,7 +55,7 @@ func TestCreateTrivia(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			service := new(utils.MockService)
-			service.On("CreateTrivia").Return(tc.createTriviaResult)
+			service.On("CreateTrivia").Return(&types.TriviaDto{}, tc.createTriviaResult)
 			server := newTestServer(service)
 
 			request, err := http.NewRequest("POST", "", nil)
@@ -98,7 +99,7 @@ func TestRegenerateTrivia(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			service := new(utils.MockService)
-			service.On("RegenerateTrivia", tc.date).Return(tc.regenerateTriviaResult)
+			service.On("RegenerateTrivia", tc.date).Return(&types.TriviaDto{}, tc.regenerateTriviaResult)
 			server := newTestServer(service)
 
 			request, err := http.NewRequest("PUT", "", nil)

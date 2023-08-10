@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -13,18 +14,24 @@ func (s *Server) ping(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (s *Server) createTrivia(writer http.ResponseWriter, request *http.Request) {
-	err := s.service.CreateTrivia()
+	trivia, err := s.service.CreateTrivia()
 	if err != nil {
 		http.Error(writer, fmt.Sprintf("%v\n", err), http.StatusInternalServerError)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(writer).Encode(trivia)
 }
 
 func (s *Server) regenerateTrivia(writer http.ResponseWriter, request *http.Request) {
 	date := mux.Vars(request)["date"]
-	err := s.service.RegenerateTrivia(date)
+	trivia, err := s.service.RegenerateTrivia(date)
 	if err != nil {
 		http.Error(writer, fmt.Sprintf("%v\n", err), http.StatusInternalServerError)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(writer).Encode(trivia)
 }

@@ -22,7 +22,7 @@ func TestCreateTrivia(t *testing.T) {
 			store := storage.NewMockStore()
 			service := NewService(store)
 
-			err := service.CreateTrivia()
+			_, err := service.CreateTrivia()
 
 			if tc.expected != "" && err != nil && err.Error() != tc.expected {
 				t.Error(err)
@@ -63,7 +63,7 @@ func TestRegenerateTrivia(t *testing.T) {
 			store := storage.NewMockStore()
 			service := NewService(store)
 
-			err := service.RegenerateTrivia(tc.date)
+			_, err := service.RegenerateTrivia(tc.date)
 
 			if tc.expected != "" && err != nil && err.Error() != tc.expected {
 				t.Error(err)
